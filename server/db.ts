@@ -1,6 +1,6 @@
 import { and, asc, desc, eq, like, or } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { appointments, doctors, emergencyEvents, users, type Doctor } from "../drizzle/schema";
+import { appointments, doctors, emergencyEvents, hospitalAppointments, users, type Doctor } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -64,5 +64,13 @@ export async function createEmergency(input: typeof emergencyEvents.$inferInsert
   if (!db) throw new Error("Database is not configured");
   await db.insert(emergencyEvents).values(input);
   const rows = await db.select().from(emergencyEvents).where(eq(emergencyEvents.id, input.id)).limit(1);
+  return rows[0];
+}
+
+export async function createHospitalAppointment(input: typeof hospitalAppointments.$inferInsert) {
+  const db = await getDb();
+  if (!db) throw new Error("Database is not configured");
+  await db.insert(hospitalAppointments).values(input);
+  const rows = await db.select().from(hospitalAppointments).where(eq(hospitalAppointments.id, input.id)).limit(1);
   return rows[0];
 }

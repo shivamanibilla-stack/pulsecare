@@ -52,8 +52,24 @@ export const emergencyEvents = mysqlTable("emergencyEvents", {
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 
+export const hospitalAppointments = mysqlTable("hospitalAppointments", {
+  id: varchar("id", { length: 64 }).primaryKey(),
+  placeId: varchar("placeId", { length: 160 }).notNull(),
+  hospitalName: varchar("hospitalName", { length: 240 }).notNull(),
+  hospitalAddress: varchar("hospitalAddress", { length: 320 }).notNull(),
+  patientName: varchar("patientName", { length: 160 }).notNull(),
+  patientEmail: varchar("patientEmail", { length: 320 }),
+  patientPhone: varchar("patientPhone", { length: 40 }),
+  preferredDate: varchar("preferredDate", { length: 20 }).notNull(),
+  preferredTime: varchar("preferredTime", { length: 20 }).notNull(),
+  reason: text("reason").notNull(),
+  status: varchar("status", { length: 40 }).default("pending_hospital_confirmation").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
 export type Doctor = typeof doctors.$inferSelect;
 export type Appointment = typeof appointments.$inferSelect;
 export type EmergencyEvent = typeof emergencyEvents.$inferSelect;
+export type HospitalAppointment = typeof hospitalAppointments.$inferSelect;

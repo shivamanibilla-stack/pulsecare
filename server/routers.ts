@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { z } from "zod";
-import { getDoctor, listDoctors, createAppointment, createEmergency } from "./db";
+import { getDoctor, listDoctors, createAppointment, createEmergency, createHospitalAppointment } from "./db";
 import { searchNearbyPlaces } from "./maps";
 import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
@@ -9,6 +9,7 @@ import { publicProcedure, router } from "./_core/trpc";
 
 const doctorInput = z.object({ search: z.string().optional(), specialty: z.string().optional() });
 const hospitalPhone = process.env.EMERGENCY_HOSPITAL_PHONE ?? "+91112";
+export const hospitalAppointmentRequestSchema = z.object({ placeId: z.string().min(1).max(160), hospitalName: z.string().min(1).max(240), hospitalAddress: z.string().min(1).max(320), patientName: z.string().min(2).max(160), patientEmail: z.string().email().optional(), patientPhone: z.string().min(5).max(40), preferredDate: z.string().min(1), preferredTime: z.string().min(1), reason: z.string().min(3).max(2000) });
 
 export function buildUpiLink(amount: number, doctorName: string) {
   const vpa = process.env.UPI_MERCHANT_VPA ?? "learningproject@upi";
@@ -54,6 +55,9 @@ export const appRouter = router({
     paymentLink: publicProcedure.input(z.object({ appointmentId: z.string(), amount: z.number().positive(), doctorName: z.string() })).mutation(({ input }) => {
       return { mode: "upi_demo", uri: buildUpiLink(input.amount, input.doctorName), message: "UPI handoff created. Connect a verified payment gateway before accepting real funds." };
     }),
+  }),
+  hospitalAppointments: router({
+    request: publicProcedure.input(hospitalAppointmentRequestSchema).mutation(({ input }) => createHospitalAppointment({ id: randomUUID(), ...input, status: "pending_hospital_confirmation" })),
   }),
   emergency: router({
     create: publicProcedure.input(z.object({ patientName: z.string().max(160).optional(), phone: z.string().max(40).optional(), location: z.string().max(320).optional(), notes: z.string().max(2000).optional() })).mutation(async ({ input }) => {
