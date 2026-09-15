@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import { getDoctor, listDoctors, createAppointment, createEmergency } from "./db";
+import { searchNearbyPlaces } from "./maps";
 import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
@@ -33,6 +34,16 @@ export const appRouter = router({
   doctors: router({
     list: publicProcedure.input(doctorInput).query(({ input }) => listDoctors(input.search, input.specialty)),
     get: publicProcedure.input(z.object({ id: z.number().int().positive() })).query(({ input }) => getDoctor(input.id)),
+  }),
+  nearby: router({
+    places: publicProcedure.input(z.object({ lat: z.number().min(-90).max(90), lng: z.number().min(-180).max(180), radiusMeters: z.number().int().min(500).max(50000).default(10000), category: z.enum(["doctor", "hospital", "clinic"]).optional() })).query(async ({ input }) => {
+      try {
+        return { places: await searchNearbyPlaces({ lat: input.lat, lng: input.lng }, input.radiusMeters, input.category) };
+      } catch (error) {
+        console.error("[Nearby Places] Search failed", error);
+        throw new Error("Nearby places are temporarily unavailable. Please try again shortly.");
+      }
+    }),
   }),
   appointments: router({
     create: publicProcedure.input(z.object({ doctorId: z.number().int().positive(), patientName: z.string().min(2).max(160), patientEmail: z.string().email().optional(), date: z.string().min(1), time: z.string().min(1) })).mutation(async ({ input }) => {
